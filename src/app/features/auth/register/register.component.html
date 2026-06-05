@@ -1,0 +1,159 @@
+<div class="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-12">
+  <div class="w-full max-w-lg">
+
+    <!-- Logo -->
+    <div class="text-center mb-8">
+      <div class="inline-flex items-center justify-center w-14 h-14 bg-primary-600 rounded-2xl mb-4 shadow-md">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V19.5a2.25 2.25 0 002.25 2.25H15" />
+        </svg>
+      </div>
+      <h1 class="text-2xl font-bold text-gray-900">FarmaStock</h1>
+      <p class="text-sm text-gray-500 mt-1">Gestión de Inventario Farmacéutico</p>
+    </div>
+
+    <!-- SUCCESS STATE -->
+    @if (registered()) {
+      <div class="card p-8 text-center">
+        <div class="w-16 h-16 bg-green-100 rounded-full grid place-items-center mx-auto mb-4">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <h2 class="text-lg font-semibold text-gray-900 mb-2">Solicitud enviada</h2>
+        <p class="text-sm text-gray-600 leading-relaxed mb-1">
+          Tu cuenta ha sido creada y está <span class="font-semibold text-amber-600">pendiente de aprobación</span>.
+        </p>
+        <p class="text-sm text-gray-500 mb-6">
+          El administrador del sistema revisará tu solicitud y activará tu acceso. Podrás iniciar sesión una vez aprobado.
+        </p>
+        <a routerLink="/login"
+           class="btn-primary inline-flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          Volver al inicio de sesión
+        </a>
+      </div>
+    }
+
+    <!-- FORM STATE -->
+    @if (!registered()) {
+      <div class="card p-8">
+        <h2 class="text-lg font-semibold text-gray-900 mb-1">Solicitar acceso</h2>
+        <p class="text-xs text-gray-400 mb-6">Tu cuenta quedará pendiente de aprobación por el administrador.</p>
+
+        @if (errorMsg()) {
+          <div class="flex items-start gap-2.5 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3 mb-5">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+            </svg>
+            {{ errorMsg() }}
+          </div>
+        }
+
+        <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-4">
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="form-label">Nombre <span class="text-red-500">*</span></label>
+              <input type="text" formControlName="nombre" placeholder="Juan" autocomplete="given-name"
+                     class="form-input" [class.form-input-error]="form.get('nombre')?.invalid && form.get('nombre')?.touched" />
+              @if (form.get('nombre')?.invalid && form.get('nombre')?.touched) {
+                <p class="text-xs text-red-500 mt-1">Requerido.</p>
+              }
+            </div>
+            <div>
+              <label class="form-label">Apellido <span class="text-red-500">*</span></label>
+              <input type="text" formControlName="apellido" placeholder="Pérez" autocomplete="family-name"
+                     class="form-input" [class.form-input-error]="form.get('apellido')?.invalid && form.get('apellido')?.touched" />
+              @if (form.get('apellido')?.invalid && form.get('apellido')?.touched) {
+                <p class="text-xs text-red-500 mt-1">Requerido.</p>
+              }
+            </div>
+          </div>
+
+          <!-- Sede -->
+          <div>
+            <label class="form-label">Sede de trabajo <span class="text-red-500">*</span></label>
+            @if (sedesLoading()) {
+              <div class="form-input flex items-center gap-2 text-gray-400">
+                <svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                </svg>
+                <span class="text-sm">Cargando sedes...</span>
+              </div>
+            } @else {
+              <select formControlName="sedeId" class="form-input"
+                      [class.form-input-error]="form.get('sedeId')?.invalid && form.get('sedeId')?.touched">
+                <option [ngValue]="null" disabled>Selecciona tu sede...</option>
+                @for (sede of sedes(); track sede.idSede) {
+                  <option [ngValue]="sede.idSede">{{ sede.nombre }} — {{ sede.direccion }}</option>
+                }
+              </select>
+            }
+            @if (form.get('sedeId')?.invalid && form.get('sedeId')?.touched) {
+              <p class="text-xs text-red-500 mt-1">Selecciona una sede.</p>
+            }
+          </div>
+
+          <div>
+            <label class="form-label">Correo electrónico <span class="text-red-500">*</span></label>
+            <input type="email" formControlName="email" placeholder="tucorreo@empresa.com" autocomplete="email"
+                   class="form-input" [class.form-input-error]="form.get('email')?.invalid && form.get('email')?.touched" />
+            @if (form.get('email')?.invalid && form.get('email')?.touched) {
+              <p class="text-xs text-red-500 mt-1">Ingresa un correo válido.</p>
+            }
+          </div>
+
+          <div>
+            <label class="form-label">Contraseña <span class="text-red-500">*</span></label>
+            <input type="password" formControlName="password" placeholder="Mínimo 8 caracteres" autocomplete="new-password"
+                   class="form-input" [class.form-input-error]="form.get('password')?.invalid && form.get('password')?.touched" />
+            @if (form.get('password')?.invalid && form.get('password')?.touched) {
+              <p class="text-xs text-red-500 mt-1">Mínimo 8 caracteres.</p>
+            }
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="form-label">Teléfono <span class="text-gray-400 font-normal">(opcional)</span></label>
+              <input type="tel" formControlName="telefono" placeholder="9XXXXXXXX"
+                     class="form-input" [class.form-input-error]="form.get('telefono')?.invalid && form.get('telefono')?.touched" />
+              @if (form.get('telefono')?.invalid && form.get('telefono')?.touched) {
+                <p class="text-xs text-red-500 mt-1">9 dígitos, empieza con 9.</p>
+              }
+            </div>
+            <div>
+              <label class="form-label">DNI <span class="text-gray-400 font-normal">(opcional)</span></label>
+              <input type="text" formControlName="dni" placeholder="12345678"
+                     class="form-input" [class.form-input-error]="form.get('dni')?.invalid && form.get('dni')?.touched" />
+              @if (form.get('dni')?.invalid && form.get('dni')?.touched) {
+                <p class="text-xs text-red-500 mt-1">8 dígitos.</p>
+              }
+            </div>
+          </div>
+
+          <button type="submit" [disabled]="isLoading()" class="btn-primary w-full justify-center py-2.5 mt-2">
+            @if (isLoading()) {
+              <svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+              </svg>
+            }
+            {{ isLoading() ? 'Enviando solicitud...' : 'Solicitar acceso' }}
+          </button>
+
+        </form>
+
+        <p class="text-center text-sm text-gray-500 mt-6">
+          ¿Ya tienes cuenta aprobada?
+          <a routerLink="/login" class="text-primary-600 font-medium hover:text-primary-700 transition-colors">Inicia sesión</a>
+        </p>
+      </div>
+    }
+
+    <p class="text-center text-xs text-gray-400 mt-6">Sistema de gestión farmacéutica multi-sede</p>
+  </div>
+</div>

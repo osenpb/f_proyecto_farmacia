@@ -1,0 +1,48 @@
+@if (error()) {
+  <div class="flex items-start gap-2 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3 mb-4">
+    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+    </svg>
+    {{ error() }}
+  </div>
+}
+
+<form [formGroup]="form" (ngSubmit)="submit()" class="space-y-4">
+  <div>
+    <label class="form-label">Nombre <span class="text-red-500">*</span></label>
+    <input type="text" formControlName="nombre" placeholder="Ej: Paracetamol 500mg"
+           class="form-input" [class.form-input-error]="form.get('nombre')?.invalid && form.get('nombre')?.touched" />
+    @if (form.get('nombre')?.errors?.['required'] && form.get('nombre')?.touched) {
+      <p class="text-xs text-red-500 mt-1">El nombre es obligatorio.</p>
+    }
+    @if (form.get('nombre')?.errors?.['minlength'] && form.get('nombre')?.touched) {
+      <p class="text-xs text-red-500 mt-1">Mínimo 2 caracteres.</p>
+    }
+    @if (form.get('nombre')?.errors?.['maxlength'] && form.get('nombre')?.touched) {
+      <p class="text-xs text-red-500 mt-1">Máximo 150 caracteres.</p>
+    }
+  </div>
+
+  <div>
+    <label class="form-label">Descripción <span class="text-gray-400 font-normal">(opcional)</span></label>
+    <textarea formControlName="descripcion" rows="3" placeholder="Descripción del medicamento..."
+              class="form-input resize-none"
+              [class.form-input-error]="form.get('descripcion')?.invalid && form.get('descripcion')?.touched"></textarea>
+    @if (form.get('descripcion')?.errors?.['maxlength'] && form.get('descripcion')?.touched) {
+      <p class="text-xs text-red-500 mt-1">Máximo 255 caracteres.</p>
+    }
+  </div>
+
+  <div class="flex justify-end gap-2 pt-2">
+    <button type="button" (click)="cancelled.emit()" class="btn-secondary">Cancelar</button>
+    <button type="submit" [disabled]="loading()" class="btn-primary">
+      @if (loading()) {
+        <svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+        </svg>
+      }
+      {{ editando() ? 'Guardar cambios' : 'Crear medicamento' }}
+    </button>
+  </div>
+</form>

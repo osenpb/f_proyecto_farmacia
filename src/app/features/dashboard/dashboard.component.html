@@ -1,0 +1,30 @@
+<!-- Header -->
+<div class="mb-8">
+  @if (currentUser(); as user) {
+    <h1 class="text-2xl font-bold text-gray-900">Bienvenido, {{ user.nombre }}</h1>
+    <p class="text-sm text-gray-500 mt-1">
+      {{ user.rol.replace('ROLE_', '') }}
+      @if (user.sede) { · <span class="font-medium text-gray-700">{{ user.sede }}</span> }
+    </p>
+  } @else {
+    <h1 class="text-2xl font-bold text-gray-900">Panel Principal</h1>
+  }
+</div>
+
+<!-- Quick access -->
+<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+  @for (item of quickItems; track item.path) {
+    <a [routerLink]="item.path"
+       class="card p-5 flex flex-col gap-4 hover:border-primary-300 hover:shadow-md transition-all group cursor-pointer">
+      <div class="w-12 h-12 rounded-xl grid place-items-center flex-shrink-0 transition-opacity group-hover:opacity-80" [class]="item.color">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+          <path stroke-linecap="round" stroke-linejoin="round" [attr.d]="item.icon" />
+        </svg>
+      </div>
+      <div>
+        <p class="text-sm font-semibold text-gray-900 group-hover:text-primary-700 transition-colors">{{ item.label }}</p>
+        <p class="text-xs text-gray-400 mt-0.5 leading-relaxed">{{ item.desc }}</p>
+      </div>
+    </a>
+  }
+</div>

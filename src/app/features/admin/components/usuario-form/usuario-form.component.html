@@ -1,0 +1,116 @@
+@if (error()) {
+  <div class="flex items-start gap-2 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3 mb-4">
+    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+    </svg>
+    {{ error() }}
+  </div>
+}
+
+<form [formGroup]="form" (ngSubmit)="submit()" class="space-y-4">
+
+  <!-- Nombre y Apellido -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <div>
+      <label class="form-label">Nombre <span class="text-red-500">*</span></label>
+      <input type="text" formControlName="nombre" placeholder="Juan" class="form-input"
+             [class.form-input-error]="form.get('nombre')?.invalid && form.get('nombre')?.touched" />
+      @if (form.get('nombre')?.invalid && form.get('nombre')?.touched) {
+        <p class="text-xs text-red-500 mt-1">Requerido.</p>
+      }
+    </div>
+    <div>
+      <label class="form-label">Apellido <span class="text-red-500">*</span></label>
+      <input type="text" formControlName="apellido" placeholder="Pérez" class="form-input"
+             [class.form-input-error]="form.get('apellido')?.invalid && form.get('apellido')?.touched" />
+      @if (form.get('apellido')?.invalid && form.get('apellido')?.touched) {
+        <p class="text-xs text-red-500 mt-1">Requerido.</p>
+      }
+    </div>
+  </div>
+
+  <!-- Email -->
+  <div>
+    <label class="form-label">Correo electrónico <span class="text-red-500">*</span></label>
+    <input type="email" formControlName="email" placeholder="usuario@empresa.com" class="form-input"
+           [class.form-input-error]="form.get('email')?.invalid && form.get('email')?.touched"
+           [class.bg-gray-50]="editando()" />
+    @if (editando()) {
+      <p class="text-xs text-gray-400 mt-1">El correo no puede modificarse.</p>
+    }
+    @if (form.get('email')?.invalid && form.get('email')?.touched) {
+      <p class="text-xs text-red-500 mt-1">Ingresa un correo válido.</p>
+    }
+  </div>
+
+  <!-- Contraseña -->
+  <div>
+    <label class="form-label">
+      Contraseña
+      @if (!editando()) { <span class="text-red-500">*</span> }
+      @else { <span class="text-gray-400 font-normal">(dejar en blanco para no cambiar)</span> }
+    </label>
+    <input type="password" formControlName="password"
+           [placeholder]="editando() ? '••••••••' : 'Mínimo 8 caracteres'"
+           class="form-input"
+           [class.form-input-error]="form.get('password')?.invalid && form.get('password')?.touched" />
+    @if (form.get('password')?.errors?.['minlength'] && form.get('password')?.touched) {
+      <p class="text-xs text-red-500 mt-1">Mínimo 8 caracteres.</p>
+    }
+  </div>
+
+  <!-- Rol y Sede -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <div>
+      <label class="form-label">Rol <span class="text-red-500">*</span></label>
+      <select formControlName="rolId" class="form-input"
+              [class.form-input-error]="form.get('rolId')?.invalid && form.get('rolId')?.touched">
+        <option [ngValue]="null" disabled>Seleccionar rol...</option>
+        @for (rol of roles; track rol.id) {
+          <option [ngValue]="rol.id">{{ rol.label }}</option>
+        }
+      </select>
+      @if (form.get('rolId')?.invalid && form.get('rolId')?.touched) {
+        <p class="text-xs text-red-500 mt-1">Selecciona un rol.</p>
+      }
+    </div>
+    <div>
+      <label class="form-label">Sede <span class="text-red-500">*</span></label>
+      <select formControlName="sedeId" class="form-input"
+              [class.form-input-error]="form.get('sedeId')?.invalid && form.get('sedeId')?.touched">
+        <option [ngValue]="null" disabled>Seleccionar sede...</option>
+        @for (sede of sedes(); track sede.idSede) {
+          <option [ngValue]="sede.idSede">{{ sede.nombre }}</option>
+        }
+      </select>
+      @if (form.get('sedeId')?.invalid && form.get('sedeId')?.touched) {
+        <p class="text-xs text-red-500 mt-1">Selecciona una sede.</p>
+      }
+    </div>
+  </div>
+
+  <!-- Teléfono y DNI -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <div>
+      <label class="form-label">Teléfono <span class="text-gray-400 font-normal">(opcional)</span></label>
+      <input type="tel" formControlName="telefono" placeholder="9XXXXXXXX" class="form-input" />
+    </div>
+    <div>
+      <label class="form-label">DNI <span class="text-gray-400 font-normal">(opcional)</span></label>
+      <input type="text" formControlName="dni" placeholder="12345678" class="form-input" />
+    </div>
+  </div>
+
+  <div class="flex justify-end gap-2 pt-2">
+    <button type="button" (click)="cancelled.emit()" class="btn-secondary">Cancelar</button>
+    <button type="submit" [disabled]="loading()" class="btn-primary">
+      @if (loading()) {
+        <svg class="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+        </svg>
+      }
+      {{ editando() ? 'Guardar cambios' : 'Crear usuario' }}
+    </button>
+  </div>
+</form>

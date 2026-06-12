@@ -2,9 +2,15 @@ import { inject, Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { ApiResponse } from '../interfaces/auth.interface';
-import { UsuarioResponse } from '../interfaces/auth.interface';
-import { RegisterRequest } from '../interfaces/auth.interface';
+import { ApiResponse, UsuarioResponse, RegisterRequest } from '../interfaces/auth.interface';
+
+export interface AdminEstadisticas {
+  usuariosActivos: number;
+  totalUsuarios: number;
+  totalSedes: number;
+  ordenesPendientes: number;
+  totalOrdenes: number;
+}
 
 @Injectable({ providedIn: 'root' })
 export class UsuarioService {
@@ -14,6 +20,10 @@ export class UsuarioService {
 
   listar(): Observable<UsuarioResponse[]> {
     return this.http.get<ApiResponse<UsuarioResponse[]>>(this.base).pipe(map(r => r.data));
+  }
+
+  estadisticas(): Observable<AdminEstadisticas> {
+    return this.http.get<ApiResponse<AdminEstadisticas>>(`${this.base}/estadisticas`).pipe(map(r => r.data));
   }
 
   crear(dto: RegisterRequest): Observable<UsuarioResponse> {

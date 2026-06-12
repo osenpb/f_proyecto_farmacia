@@ -51,6 +51,7 @@ export class InventarioPageComponent {
       idMedicamento: item.idMedicamento,
       nombre: item.nombreMedicamento,
       descripcion: item.descripcion,
+      precioVenta: 0,
       stockTotal: item.stockTotal,
       idSede: item.idSede,
       nombreSede: item.nombreSede,

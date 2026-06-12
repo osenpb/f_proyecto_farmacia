@@ -85,7 +85,7 @@
                 <td class="px-4 py-3">
                   <div class="flex items-center gap-3">
                     <div class="w-8 h-8 rounded-full bg-primary-100 grid place-items-center text-primary-700 text-xs font-bold flex-shrink-0">
-                      {{ u.nombre.charAt(0) }}{{ u.apellido?.charAt(0) ?? '' }}
+                      {{ u.nombre.charAt(0) }}{{ u.apellido.charAt(0)}}
                     </div>
                     <div>
                       <p class="text-sm font-medium text-gray-900">{{ u.nombre }} {{ u.apellido }}</p>
@@ -96,10 +96,10 @@
                 <td class="px-4 py-3 text-sm text-gray-600 hidden sm:table-cell">{{ u.email }}</td>
                 <td class="px-4 py-3">
                   <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium"
-                        [class.bg-purple-100]="u.rol?.includes('ADMIN')" [class.text-purple-800]="u.rol?.includes('ADMIN')"
-                        [class.bg-blue-100]="u.rol?.includes('GESTOR')" [class.text-blue-800]="u.rol?.includes('GESTOR')"
-                        [class.bg-teal-100]="u.rol?.includes('FARMACEUTICO')" [class.text-teal-800]="u.rol?.includes('FARMACEUTICO')"
-                        [class.bg-amber-100]="u.rol?.includes('TRANSPORTISTA')" [class.text-amber-800]="u.rol?.includes('TRANSPORTISTA')">
+                        [class.bg-purple-100]="u.rol.includes('ADMIN')" [class.text-purple-800]="u.rol.includes('ADMIN')"
+                        [class.bg-blue-100]="u.rol.includes('GESTOR')" [class.text-blue-800]="u.rol.includes('GESTOR')"
+                        [class.bg-teal-100]="u.rol.includes('FARMACEUTICO')" [class.text-teal-800]="u.rol.includes('FARMACEUTICO')"
+                        [class.bg-amber-100]="u.rol.includes('TRANSPORTISTA')" [class.text-amber-800]="u.rol.includes('TRANSPORTISTA')">
                     {{ rolLabel(u.rol) }}
                   </span>
                 </td>
@@ -156,7 +156,7 @@
           <div class="px-5 py-4 flex items-center gap-4 flex-wrap hover:bg-amber-50/30 transition-colors"
                [class.opacity-50]="procesandoEmail() === u.email">
             <div class="w-10 h-10 rounded-full bg-amber-100 grid place-items-center text-amber-700 text-sm font-bold flex-shrink-0">
-              {{ u.nombre.charAt(0) }}{{ u.apellido?.charAt(0) ?? '' }}
+              {{ u.nombre.charAt(0) }}{{ u.apellido.charAt(0) }}
             </div>
             <div class="flex-1 min-w-0">
               <p class="text-sm font-semibold text-gray-900">{{ u.nombre }} {{ u.apellido }}</p>

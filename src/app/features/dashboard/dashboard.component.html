@@ -1,30 +1,529 @@
-<!-- Header -->
-<div class="mb-8">
-  @if (currentUser(); as user) {
-    <h1 class="text-2xl font-bold text-gray-900">Bienvenido, {{ user.nombre }}</h1>
-    <p class="text-sm text-gray-500 mt-1">
-      {{ user.rol.replace('ROLE_', '') }}
-      @if (user.sede) { · <span class="font-medium text-gray-700">{{ user.sede }}</span> }
-    </p>
-  } @else {
-    <h1 class="text-2xl font-bold text-gray-900">Panel Principal</h1>
-  }
-</div>
+<!-- ═══════════════════════════════════════════════════════════
+     FARMACÉUTICO DASHBOARD
+     ═══════════════════════════════════════════════════════════ -->
+@if (esFarmaceutico()) {
+<div class="p-6 space-y-6">
 
-<!-- Quick access -->
-<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-  @for (item of quickItems; track item.path) {
-    <a [routerLink]="item.path"
-       class="card p-5 flex flex-col gap-4 hover:border-primary-300 hover:shadow-md transition-all group cursor-pointer">
-      <div class="w-12 h-12 rounded-xl grid place-items-center flex-shrink-0 transition-opacity group-hover:opacity-80" [class]="item.color">
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
-          <path stroke-linecap="round" stroke-linejoin="round" [attr.d]="item.icon" />
-        </svg>
+  <!-- Header + KPIs -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+    <div class="lg:col-span-2 bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+      <p class="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-1">Panel de Control</p>
+      <h1 class="text-2xl font-bold text-gray-900 mb-0.5">
+        Bienvenido, {{ currentUser()?.nombre }} {{ currentUser()?.apellido }}
+      </h1>
+      <p class="text-sm text-gray-500 mb-6">{{ currentUser()?.sede }} · Turno activo</p>
+      <div class="grid grid-cols-3 gap-4">
+        <div class="rounded-xl bg-indigo-50 px-4 py-4">
+          <p class="text-xs font-semibold text-indigo-500 uppercase tracking-wider mb-1">Ventas hoy</p>
+          <p class="text-2xl font-bold text-indigo-700">{{ formatMoneda(totalVentasHoy()) }}</p>
+          <p class="text-xs text-indigo-400 mt-0.5">ingresos del día</p>
+        </div>
+        <div class="rounded-xl bg-teal-50 px-4 py-4">
+          <p class="text-xs font-semibold text-teal-500 uppercase tracking-wider mb-1">Transacciones</p>
+          <p class="text-2xl font-bold text-teal-700">{{ ventasHoy().length }}</p>
+          <p class="text-xs text-teal-400 mt-0.5">ventas realizadas</p>
+        </div>
+        <div class="rounded-xl bg-amber-50 px-4 py-4">
+          <p class="text-xs font-semibold text-amber-500 uppercase tracking-wider mb-1">Alertas</p>
+          <p class="text-2xl font-bold text-amber-700">{{ medicamentosBajoStock() }}</p>
+          <p class="text-xs text-amber-400 mt-0.5">bajo stock</p>
+        </div>
       </div>
+    </div>
+
+    <!-- Nueva Venta -->
+    <div class="bg-gradient-to-br from-violet-700 to-indigo-800 rounded-2xl shadow-lg p-6 flex flex-col justify-between text-white">
       <div>
-        <p class="text-sm font-semibold text-gray-900 group-hover:text-primary-700 transition-colors">{{ item.label }}</p>
-        <p class="text-xs text-gray-400 mt-0.5 leading-relaxed">{{ item.desc }}</p>
+        <div class="w-11 h-11 rounded-xl bg-white/20 flex items-center justify-center mb-4">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-1.4 5.4A1 1 0 007 20h10a1 1 0 00.97-1.24L16 13M9 21a1 1 0 100-2 1 1 0 000 2zm6 0a1 1 0 100-2 1 1 0 000 2z" />
+          </svg>
+        </div>
+        <h2 class="text-lg font-bold leading-snug">Nueva Venta</h2>
+        <p class="text-sm text-white/70 mt-1">Inicia el terminal de punto de venta.</p>
       </div>
-    </a>
-  }
+      <a routerLink="/puesto-de-venta"
+         class="mt-6 block w-full text-center bg-white text-violet-700 font-semibold text-sm rounded-xl py-2.5 hover:bg-violet-50 transition-colors">
+        Iniciar Terminal
+      </a>
+    </div>
+  </div>
+
+  <!-- Estado Inventario + Ventas Recientes -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-sm font-bold text-gray-700 uppercase tracking-wider">Estado de Inventario</h2>
+        <a routerLink="/inventario" class="text-xs text-indigo-600 hover:underline font-medium">Ver todo →</a>
+      </div>
+      @if (loading()) {
+        <div class="flex justify-center py-8"><div class="animate-spin rounded-full h-6 w-6 border-2 border-indigo-600 border-t-transparent"></div></div>
+      } @else {
+        <div class="space-y-3">
+          @for (med of inventarioEstado(); track med.nombre) {
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-sm font-medium text-gray-800 truncate">{{ med.nombre }}</span>
+                <span class="text-xs font-semibold px-2 py-0.5 rounded-full ml-2 flex-shrink-0" [class]="stockBadgeClass(med.bajoStock)">{{ med.stock }} uds</span>
+              </div>
+              <div class="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                <div class="h-full rounded-full" [class]="stockBarColor(med.bajoStock)" [style.width]="stockBarWidth(med.stock)"></div>
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-sm font-bold text-gray-700 uppercase tracking-wider">Ventas Recientes</h2>
+        <a routerLink="/historial-ventas" class="text-xs text-indigo-600 hover:underline font-medium">Ver todo →</a>
+      </div>
+      @if (loading()) {
+        <div class="flex justify-center py-8"><div class="animate-spin rounded-full h-6 w-6 border-2 border-indigo-600 border-t-transparent"></div></div>
+      } @else if (ventasRecientes().length === 0) {
+        <p class="text-sm text-gray-400 text-center py-8">No hay ventas registradas aún.</p>
+      } @else {
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="text-xs text-gray-400 uppercase tracking-wider border-b border-gray-100">
+              <th class="pb-2 text-left font-semibold">ID</th>
+              <th class="pb-2 text-left font-semibold">Fecha</th>
+              <th class="pb-2 text-center font-semibold">Items</th>
+              <th class="pb-2 text-right font-semibold">Total</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-50">
+            @for (venta of ventasRecientes(); track venta.idVenta) {
+              <tr>
+                <td class="py-2.5"><span class="text-xs font-semibold px-2 py-0.5 rounded bg-indigo-50 text-indigo-700">#{{ venta.idVenta }}</span></td>
+                <td class="py-2.5 text-gray-500 text-xs">{{ formatFechaCorta(venta.fecha) }}</td>
+                <td class="py-2.5 text-center"><span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-gray-100 text-gray-600 text-xs font-semibold">{{ venta.detalles.length }}</span></td>
+                <td class="py-2.5 text-right font-bold text-gray-900 text-xs">{{ formatMoneda(venta.total) }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </div>
+  </div>
+
+  <!-- Bottom cards -->
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
+    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm px-6 py-5 flex items-center gap-4">
+      <div class="w-11 h-11 rounded-xl bg-red-100 flex items-center justify-center flex-shrink-0">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" /></svg>
+      </div>
+      <div><p class="text-2xl font-bold text-gray-900">{{ medicamentosBajoStock() }}</p><p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Alertas Stock</p></div>
+    </div>
+    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm px-6 py-5 flex items-center gap-4">
+      <div class="w-11 h-11 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+      </div>
+      <div><p class="text-2xl font-bold text-gray-900">{{ vencimientosCount() }}</p><p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Próx. Vencimientos</p></div>
+    </div>
+    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm px-6 py-5 flex items-center gap-4">
+      <div class="w-11 h-11 rounded-xl bg-teal-100 flex items-center justify-center flex-shrink-0">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-teal-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
+      </div>
+      <div><p class="text-2xl font-bold text-gray-900">{{ ventas().length }}</p><p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Total Ventas</p></div>
+    </div>
+  </div>
 </div>
+}
+
+<!-- ═══════════════════════════════════════════════════════════
+     GESTOR DASHBOARD
+     ═══════════════════════════════════════════════════════════ -->
+@if (esGestor()) {
+<div class="p-6 space-y-6">
+
+  <!-- Header -->
+  <div>
+    <h1 class="text-2xl font-bold text-gray-900">Panel de Gestión</h1>
+    <p class="text-sm text-gray-500 mt-1">Bienvenido de nuevo, {{ currentUser()?.nombre }}. Aquí tienes el resumen de operaciones de hoy.</p>
+  </div>
+
+  <!-- KPI row -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+
+    <!-- Órdenes pendientes -->
+    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm px-5 py-5">
+      <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Órdenes Pendientes</p>
+      <p class="text-3xl font-bold text-violet-700">{{ ordenesPendientes() }}</p>
+      <p class="text-xs text-gray-400 mt-2 flex items-center gap-1">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-violet-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
+        requieren acción
+      </p>
+    </div>
+
+    <!-- Stock crítico -->
+    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm px-5 py-5">
+      <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Stock Crítico</p>
+      <p class="text-3xl font-bold text-red-600">{{ stockCritico() }}</p>
+      <div class="mt-3 w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+        <div class="h-full bg-red-500 rounded-full transition-all"
+             [style.width]="stockCritico() > 0 ? '100%' : '0%'"></div>
+      </div>
+    </div>
+
+    <!-- Total órdenes -->
+    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm px-5 py-5">
+      <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Total Órdenes</p>
+      <p class="text-3xl font-bold text-teal-700">{{ ordenes().length }}</p>
+      <p class="text-xs text-gray-400 mt-2 flex items-center gap-1">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-teal-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg>
+        en el sistema
+      </p>
+    </div>
+
+    <!-- Alertas activas -->
+    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm px-5 py-5">
+      <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Alertas Activas</p>
+      <p class="text-3xl font-bold text-amber-600">{{ notificaciones().length }}</p>
+      <p class="text-xs text-gray-400 mt-2 flex items-center gap-1">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5" /></svg>
+        notificaciones
+      </p>
+    </div>
+  </div>
+
+  <!-- Main content: Órdenes Recientes + Alertas -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+
+    <!-- Órdenes Recientes (2/3) -->
+    <div class="lg:col-span-2 bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-sm font-bold text-gray-700 uppercase tracking-wider">Órdenes Recientes</h2>
+        <a routerLink="/ordenes" class="text-xs text-violet-600 hover:underline font-medium">Ver todas →</a>
+      </div>
+
+      @if (loading()) {
+        <div class="flex justify-center py-10"><div class="animate-spin rounded-full h-7 w-7 border-2 border-violet-600 border-t-transparent"></div></div>
+      } @else if (ordenesRecientes().length === 0) {
+        <div class="flex flex-col items-center justify-center py-10 text-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10 text-gray-200 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+          </svg>
+          <p class="text-sm text-gray-400">No hay órdenes registradas.</p>
+        </div>
+      } @else {
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="text-xs text-gray-400 uppercase tracking-wider border-b border-gray-100">
+              <th class="pb-2 text-left font-semibold">ID Orden</th>
+              <th class="pb-2 text-left font-semibold">Destino</th>
+              <th class="pb-2 text-left font-semibold">Fecha</th>
+              <th class="pb-2 text-center font-semibold">Estado</th>
+              <th class="pb-2 text-center font-semibold">Acción</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-50">
+            @for (orden of ordenesRecientes(); track orden.idOrden) {
+              <tr class="hover:bg-gray-50 transition-colors">
+                <td class="py-3">
+                  <a routerLink="/ordenes" class="text-xs font-bold text-violet-600 hover:underline">
+                    ORD-{{ orden.idOrden }}
+                  </a>
+                </td>
+                <td class="py-3 text-sm text-gray-700">{{ orden.nombreSede }}</td>
+                <td class="py-3 text-xs text-gray-500">{{ formatFechaCorta(orden.fecha) }}</td>
+                <td class="py-3 text-center">
+                  <span class="text-xs font-semibold px-2.5 py-1 rounded-full" [class]="estadoOrdenClass(orden.estado)">
+                    {{ orden.estado }}
+                  </span>
+                </td>
+                <td class="py-3 text-center">
+                  <a routerLink="/ordenes" class="text-gray-400 hover:text-violet-600 transition-colors inline-block">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                  </a>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    </div>
+
+    <!-- Alertas (1/3) -->
+    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 flex flex-col">
+      <h2 class="text-sm font-bold text-gray-700 uppercase tracking-wider mb-4">Alertas</h2>
+
+      @if (alertasRecientes().length === 0) {
+        <p class="text-sm text-gray-400 text-center py-6">Sin alertas activas.</p>
+      } @else {
+        <div class="space-y-3 flex-1">
+          @for (notif of alertasRecientes(); track notif.idNotificacion) {
+            <div class="flex items-start gap-3 p-3 rounded-xl bg-gray-50">
+              <div class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" [class]="notifIconClass(notif.tipo)">
+                @if (notif.tipo.includes('STOCK')) {
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" /></svg>
+                } @else if (notif.tipo.includes('CADUCIDAD')) {
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                } @else {
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                }
+              </div>
+              <div class="min-w-0">
+                <p class="text-xs font-bold text-gray-800 leading-snug">{{ notif.nombreMedicamento || notif.tipo }}</p>
+                <p class="text-xs text-gray-500 mt-0.5 leading-relaxed">{{ notif.mensaje }}</p>
+              </div>
+            </div>
+          }
+        </div>
+      }
+
+      <a routerLink="/notificaciones"
+         class="mt-4 block w-full text-center border border-gray-200 text-gray-600 text-xs font-semibold rounded-xl py-2.5 hover:bg-gray-50 transition-colors">
+        Ver todas las alertas
+      </a>
+    </div>
+  </div>
+
+</div>
+}
+
+<!-- ═══════════════════════════════════════════════════════════
+     ADMIN DASHBOARD
+     ═══════════════════════════════════════════════════════════ -->
+@if (esAdmin()) {
+<div class="p-6 space-y-6">
+
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">Panel de Control General</h1>
+      <p class="text-sm text-gray-500 mt-1">
+        Bienvenido al sistema central de <span class="text-violet-600 font-semibold">FarmaStock</span>.
+        Aquí tienes el resumen de hoy.
+      </p>
+    </div>
+    <div class="flex items-center gap-3 flex-shrink-0">
+      <div class="flex items-center gap-2 border border-gray-200 bg-white rounded-xl px-3 py-2 text-sm text-gray-600">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+        Hoy: {{ fechaHoy }}
+      </div>
+      <a routerLink="/ordenes"
+         class="flex items-center gap-2 bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold rounded-xl px-4 py-2 transition-colors">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
+        Nueva Orden
+      </a>
+    </div>
+  </div>
+
+  <!-- KPI row -->
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+
+    <!-- Usuarios activos -->
+    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
+      <div class="flex items-start justify-between mb-3">
+        <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+        </div>
+        <span class="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
+          +{{ adminStats()?.usuariosActivos ?? 0 }} activos
+        </span>
+      </div>
+      <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Usuarios Activos</p>
+      <p class="text-3xl font-bold text-gray-900 mt-1">{{ adminStats()?.usuariosActivos ?? '—' }}</p>
+    </div>
+
+    <!-- Sedes operativas -->
+    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
+      <div class="flex items-start justify-between mb-3">
+        <div class="w-10 h-10 rounded-xl bg-teal-50 flex items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-teal-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+          </svg>
+        </div>
+        <span class="text-xs font-bold text-teal-600 bg-teal-50 px-2 py-0.5 rounded-full">Estable</span>
+      </div>
+      <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Sedes Operativas</p>
+      <p class="text-3xl font-bold text-gray-900 mt-1">{{ adminStats()?.totalSedes ?? '—' }}</p>
+    </div>
+
+    <!-- Stock crítico -->
+    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
+      <div class="flex items-start justify-between mb-3">
+        <div class="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+          </svg>
+        </div>
+        @if (stockCritico() > 0) {
+          <span class="text-xs font-bold text-red-600 bg-red-50 px-2 py-0.5 rounded-full">{{ stockCritico() }} Alertas</span>
+        }
+      </div>
+      <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Stock Crítico</p>
+      <p class="text-3xl font-bold text-red-600 mt-1">{{ stockCritico() === 0 ? '—' : stockCritico() }}</p>
+    </div>
+
+    <!-- Órdenes pendientes -->
+    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-5">
+      <div class="flex items-start justify-between mb-3">
+        <div class="w-10 h-10 rounded-xl bg-violet-50 flex items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-violet-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+          </svg>
+        </div>
+        <span class="text-xs font-bold text-violet-600 bg-violet-50 px-2 py-0.5 rounded-full">Procesando</span>
+      </div>
+      <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Órdenes Pendientes</p>
+      <p class="text-3xl font-bold text-gray-900 mt-1">{{ adminStats()?.ordenesPendientes ?? '—' }}</p>
+    </div>
+  </div>
+
+  <!-- Middle: Gráfico + Notificaciones críticas -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+
+    <!-- Distribución por Sede (barra chart CSS) -->
+    <div class="lg:col-span-2 bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-sm font-bold text-gray-700">Distribución de Medicamentos por Sede</h2>
+        <a routerLink="/inventario" class="text-xs text-violet-600 hover:underline font-medium">Ver Reporte Detallado</a>
+      </div>
+
+      @if (loading() || stockPorSede().length === 0) {
+        <div class="flex justify-center items-center py-16">
+          @if (loading()) {
+            <div class="animate-spin rounded-full h-6 w-6 border-2 border-violet-600 border-t-transparent"></div>
+          } @else {
+            <p class="text-sm text-gray-400">Sin datos de stock por sede.</p>
+          }
+        </div>
+      } @else {
+        <div class="flex items-end justify-around gap-2 h-44">
+          @for (sede of stockPorSede(); track sede.nombre) {
+            <div class="flex flex-col items-center gap-1 flex-1 min-w-0">
+              <span class="text-xs font-semibold text-gray-600">{{ sede.total }}</span>
+              <div class="w-full rounded-t-md bg-violet-500 transition-all duration-700"
+                   [style.height]="sede.pct + '%'"
+                   style="min-height: 8px; max-height: 100%"></div>
+              <span class="text-xs text-gray-400 truncate w-full text-center" style="font-size:10px">
+                {{ sede.nombre }}
+              </span>
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    <!-- Notificaciones Críticas -->
+    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-sm font-bold text-gray-700">Notificaciones Críticas</h2>
+        @if (notificaciones().length > 0) {
+          <span class="w-5 h-5 rounded-full bg-red-500 text-white text-xs font-bold flex items-center justify-center">
+            {{ notificaciones().length > 9 ? '9+' : notificaciones().length }}
+          </span>
+        }
+      </div>
+
+      @if (notificaciones().length === 0) {
+        <p class="text-sm text-gray-400 text-center py-6">Sin notificaciones activas.</p>
+      } @else {
+        <div class="space-y-3">
+          @for (notif of notificaciones().slice(0, 4); track notif.idNotificacion) {
+            <div class="border-l-2 pl-3 py-1"
+                 [class]="notif.tipo.includes('STOCK') ? 'border-red-500' : notif.tipo.includes('CADUCIDAD') ? 'border-amber-500' : 'border-violet-400'">
+              <p class="text-xs font-bold text-gray-800">{{ notif.nombreMedicamento || 'Alerta del sistema' }}</p>
+              <p class="text-xs text-gray-500 mt-0.5 leading-snug">{{ notif.mensaje }}</p>
+              <span class="inline-block mt-1 text-xs font-bold px-1.5 py-0.5 rounded"
+                    [class]="notifUrgencyClass(notif.tipo)">
+                {{ notifUrgencyLabel(notif.tipo) }}
+              </span>
+            </div>
+          }
+        </div>
+
+        <a routerLink="/notificaciones"
+           class="mt-4 block w-full text-center border border-gray-200 text-gray-600 text-xs font-semibold rounded-xl py-2.5 hover:bg-gray-50 transition-colors">
+          Ver todas las alertas
+        </a>
+      }
+    </div>
+  </div>
+
+  <!-- Bottom: Accesos Recientes + IA + Reporte semanal -->
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
+
+    <!-- Accesos Recientes -->
+    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+      <div class="flex items-center gap-2 mb-4">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-violet-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+        <h2 class="text-sm font-bold text-gray-700">Accesos Recientes</h2>
+      </div>
+      <div class="space-y-3">
+        @for (usuario of usuariosRecientes(); track usuario.id) {
+          <div class="flex items-center justify-between gap-3 p-2 rounded-xl hover:bg-gray-50 transition-colors">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-full bg-violet-100 flex items-center justify-center flex-shrink-0">
+                <span class="text-xs font-bold text-violet-700">{{ usuario.nombre.charAt(0) }}{{ usuario.apellido.charAt(0) }}</span>
+              </div>
+              <div>
+                <p class="text-sm font-semibold text-gray-800">{{ usuario.nombre }} {{ usuario.apellido }}</p>
+                <p class="text-xs text-gray-400">{{ rolLabel(usuario.rol) }}</p>
+              </div>
+            </div>
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" /></svg>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Optimización -->
+    <div class="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 flex flex-col">
+      <h2 class="text-sm font-bold text-gray-700 mb-3">Optimización del Sistema</h2>
+      @if (stockCritico() > 0) {
+        <p class="text-sm text-gray-600 leading-relaxed flex-1">
+          Hay <strong>{{ stockCritico() }}</strong> medicamento(s) en stock crítico.
+          Se recomienda generar órdenes de reposición para las sedes afectadas.
+        </p>
+        <a routerLink="/ordenes"
+           class="mt-4 block w-full text-center bg-violet-600 hover:bg-violet-700 text-white text-sm font-semibold rounded-xl py-2.5 transition-colors">
+          Generar Orden
+        </a>
+      } @else {
+        <p class="text-sm text-gray-600 leading-relaxed flex-1">
+          El inventario se encuentra en niveles óptimos.
+          Todos los medicamentos tienen stock suficiente.
+        </p>
+        <div class="mt-4 flex items-center gap-2 text-emerald-600 text-sm font-medium">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+          Sistema en buen estado
+        </div>
+      }
+    </div>
+
+    <!-- Reporte Semanal -->
+    <div class="rounded-2xl overflow-hidden shadow-sm relative bg-gray-900 flex flex-col justify-end p-6 min-h-[180px]">
+      <div class="absolute inset-0 bg-gradient-to-br from-violet-900/80 to-gray-900/90"></div>
+      <div class="absolute inset-0 opacity-20"
+           style="background-image: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iIzMzMCIvPjxsaW5lIHgxPSIwIiB5MT0iNDAiIHgyPSIyMDAiIHkyPSI0MCIgc3Ryb2tlPSIjNjY2IiBzdHJva2Utd2lkdGg9IjEiLz48bGluZSB4MT0iMCIgeTE9IjgwIiB4Mj0iMjAwIiB5Mj0iODAiIHN0cm9rZT0iIzY2NiIgc3Ryb2tlLXdpZHRoPSIxIi8+PC9zdmc+')"></div>
+      <div class="relative z-10">
+        <p class="text-white font-bold text-base">Resumen Semanal</p>
+        <p class="text-white/60 text-xs mt-1 mb-4">Descarga el reporte de rendimiento de la cadena de suministro.</p>
+        <a href="http://localhost:8080/api/gestor/reportes/stock-sede/pdf" target="_blank"
+           class="block w-full text-center bg-white/10 hover:bg-white/20 border border-white/20 text-white text-sm font-semibold rounded-xl py-2.5 transition-colors backdrop-blur-sm">
+          Descargar PDF
+        </a>
+      </div>
+    </div>
+  </div>
+
+</div>
+}
+
+<!-- Fallback para otros roles -->
+@if (!esFarmaceutico() && !esGestor() && !esAdmin()) {
+<div class="p-6">
+  <h1 class="text-2xl font-bold text-gray-900 mb-1">Bienvenido, {{ currentUser()?.nombre }}</h1>
+  <p class="text-sm text-gray-500">{{ currentUser()?.sede }}</p>
+</div>
+}

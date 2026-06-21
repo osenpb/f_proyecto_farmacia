@@ -53,10 +53,14 @@ export class UsuariosPageComponent {
   cerrarModal(): void { this.showModal.set(false); this.editando.set(null); }
 
   onSaved(u: UsuarioResponse): void {
-    const lista = this.activos();
-    const idx = lista.findIndex(x => x.email === u.email);
-    this.activos.set(idx >= 0 ? lista.map(x => x.email === u.email ? u : x) : [u, ...lista]);
     this.cerrarModal();
+    if (u) {
+      const lista = this.activos();
+      const idx = lista.findIndex(x => x.email === u.email);
+      this.activos.set(idx >= 0 ? lista.map(x => x.email === u.email ? u : x) : [u, ...lista]);
+    } else {
+      this.cargar();
+    }
   }
 
   aprobar(email: string): void {

@@ -27,8 +27,8 @@ export class UsuarioService {
   }
 
   crear(dto: RegisterRequest): Observable<UsuarioResponse> {
-    return this.http.post<ApiResponse<{ usuario: UsuarioResponse }>>(this.registerUrl, dto)
-      .pipe(map(r => r.data.usuario));
+    return this.http.post<ApiResponse<void>>(this.registerUrl, dto)
+      .pipe(map(() => null as unknown as UsuarioResponse));
   }
 
   actualizar(email: string, dto: RegisterRequest): Observable<UsuarioResponse> {

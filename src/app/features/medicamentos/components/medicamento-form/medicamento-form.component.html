@@ -33,6 +33,15 @@
     }
   </div>
 
+  <div>
+    <label class="form-label">Precio de venta <span class="text-gray-400 font-normal">(opcional)</span></label>
+    <input type="number" formControlName="precioVenta" min="0" step="0.01" placeholder="0.00"
+           class="form-input" [class.form-input-error]="form.get('precioVenta')?.invalid && form.get('precioVenta')?.touched" />
+    @if (form.get('precioVenta')?.errors?.['min'] && form.get('precioVenta')?.touched) {
+      <p class="text-xs text-red-500 mt-1">El precio no puede ser negativo.</p>
+    }
+  </div>
+
   <div class="flex justify-end gap-2 pt-2">
     <button type="button" (click)="cancelled.emit()" class="btn-secondary">Cancelar</button>
     <button type="submit" [disabled]="loading()" class="btn-primary">

@@ -24,12 +24,13 @@ export class MedicamentoFormComponent implements OnChanges {
   readonly form = this.fb.nonNullable.group({
     nombre:      ['', [Validators.required, Validators.minLength(2), Validators.maxLength(150)]],
     descripcion: ['', [Validators.maxLength(255)]],
+    precioVenta: [0, [Validators.min(0)]],
   });
 
   ngOnChanges(): void {
     const med = this.editando();
     if (med) {
-      this.form.patchValue({ nombre: med.nombre, descripcion: med.descripcion ?? '' });
+      this.form.patchValue({ nombre: med.nombre, descripcion: med.descripcion ?? '', precioVenta: med.precioVenta ?? 0 });
     } else {
       this.form.reset();
     }
@@ -41,9 +42,11 @@ export class MedicamentoFormComponent implements OnChanges {
     this.loading.set(true);
     this.error.set('');
 
+    const { nombre, descripcion, precioVenta } = this.form.getRawValue();
     const dto: MedicamentoRequest = {
-      nombre:      this.form.getRawValue().nombre,
-      descripcion: this.form.getRawValue().descripcion || undefined,
+      nombre,
+      descripcion: descripcion || undefined,
+      precioVenta: precioVenta > 0 ? precioVenta : undefined,
     };
 
     const op$ = this.editando()
